@@ -1,7 +1,7 @@
 // Sign Extend
 import pkg::*;
 
-module sign_extend #(
+module sign_ext #(
     parameter BUS_WIDTH = 32
 ) (
     input  [BUS_WIDTH-1:0]  i_instr,

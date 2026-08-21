@@ -8,7 +8,8 @@ module alu #(
     input  logic [D_WIDTH-1:0]      i_data_b,
     input  operand_t                i_operand,
 
-    output logic [D_WIDTH-1:0]      o_data
+    output logic [D_WIDTH-1:0]      o_data,
+    output logic                    o_zero
 );
 
     always_comb begin
