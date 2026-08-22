@@ -6,7 +6,7 @@ module alu #(
 ) (
     input  logic [D_WIDTH-1:0]      i_data_a,
     input  logic [D_WIDTH-1:0]      i_data_b,
-    input  operand_t                i_operand,
+    input  alu_op_t                 i_operand,
 
     output logic [D_WIDTH-1:0]      o_data,
     output logic                    o_zero

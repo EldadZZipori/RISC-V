@@ -4,10 +4,10 @@ import pkg::*;
 module sign_ext #(
     parameter BUS_WIDTH = 32
 ) (
-    input  [BUS_WIDTH-1:0]  i_instr,
-    input  [2:0]            i_imm_src,
+    input logic     [BUS_WIDTH-1:0] i_instr,
+    input instr_t                   i_imm_src,
 
-    output [BUS_WIDTH-1:0]  o_imm_ext
+    output logic    [BUS_WIDTH-1:0] o_imm_ext
 );
 
     always_comb begin
