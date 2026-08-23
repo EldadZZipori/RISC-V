@@ -1,14 +1,3 @@
-`define SET_CTRL_SIGNALS(wr, imm, alu_b, mem_w, res_src, br, alu) \
-    begin \
-        o_reg_file_wr    = wr; \
-        o_imm_src        = imm; \
-        o_alu_srcb_ctrl  = alu_b; \
-        o_mem_write      = mem_w; \
-        o_cpu_result_src = res_src; \
-        branch           = br; \
-        o_alu_cntr           = alu; \
-    end
-
 module cpu_ctrl #(
     
 ) (
@@ -18,7 +7,7 @@ module cpu_ctrl #(
     input logic             i_zero,
 
     output pc_src_t         o_pc_src,
-    output logic            o_cpu_result_src,
+    output cpu_res_src_t    o_cpu_result_src,
     output logic            o_mem_write,
     output alu_cntr_t       o_alu_cntr,
     output alu_src_b_ctrl_t o_alu_srcb_ctrl,
@@ -26,15 +15,92 @@ module cpu_ctrl #(
     output logic            o_reg_file_wr
 );
     logic branch;
+    logic jump;
     alu_cntr_t alu_op;
 
+    // op code decoder
     always_comb begin
         case (i_op)
-            LW:     `SET_CTRL_SIGNALS(1'b1, I_TYPE, IMM_EXT, 1'b0, 1'b1, 1'b0, ADD)
-            SW:     `SET_CTRL_SIGNALS(1'b0, S_TYPE, IMM_EXT, 1'b1, 1'b0, 1'b0, ADD)
-            BEQ:    `SET_CTRL_SIGNALS(1'b0, B_TYPE, RF_RD2, 1'b0, 1'b0, 1'b1, SUB)
-            R_TYPE: `SET_CTRL_SIGNALS(1'b0, R_TYPE, RF_RD2, 1'b0, 1'b0, 1'b1, R_TYPE)
-            default: `SET_CTRL_SIGNALS(1'b0, R_TYPE, RF_RD2, 1'b0, 1'b0, 1'b0 ADD)
+            LW: begin
+                o_reg_file_wr    = 1'b1;
+                o_imm_src        = I_TYPE;
+                o_alu_srcb_ctrl  = IMM_EXT;
+                o_mem_write      = 1'b0;
+                o_cpu_result_src = DATA_MEM;
+                branch           = 1'b0;
+                o_alu_cntr       = ADD;
+                jump             = 1'b0;
+            end
+            SW: begin
+                o_reg_file_wr    = 1'b0;
+                o_imm_src        = S_TYPE;
+                o_alu_srcb_ctrl  = IMM_EXT;
+                o_mem_write      = 1'b1;
+                o_cpu_result_src = ALU;
+                branch           = 1'b0;
+                o_alu_cntr       = ADD;
+                jump             = 1'b0;
+            end
+            BEQ: begin
+                o_reg_file_wr    = 1'b0;
+                o_imm_src        = B_TYPE;
+                o_alu_srcb_ctrl  = RF_RD2;
+                o_mem_write      = 1'b0;
+                o_cpu_result_src = ALU;
+                branch           = 1'b1;
+                o_alu_cntr       = SUB;
+                jump             = 1'b0;
+            end
+            R_TYPE: begin
+                o_reg_file_wr    = 1'b0;
+                o_imm_src        = R_TYPE;
+                o_alu_srcb_ctrl  = RF_RD2;
+                o_mem_write      = 1'b0;
+                o_cpu_result_src = ALU;
+                branch           = 1'b1;
+                o_alu_cntr       = R_TYPE;
+                jump             = 1'b0;
+            end
+            ADDI: begin
+                o_reg_file_wr    = 1'b1;
+                o_imm_src        = I_TYPE;
+                o_alu_srcb_ctrl  = IMM_EXT;
+                o_mem_write      = 1'b0;
+                o_cpu_result_src = ALU;
+                branch           = 1'b1;
+                o_alu_cntr       = R_TYPE;
+                jump             = 1'b0;
+            end
+            I_TYPE: begin
+                o_reg_file_wr    = 1'b1;
+                o_imm_src        = R_TYPE;
+                o_alu_srcb_ctrl  = RF_RD2;
+                o_mem_write      = 1'b0;
+                o_cpu_result_src = ALU;
+                branch           = 1'b0;
+                o_alu_cntr       = R_TYPE;
+                jump             = 1'b0;
+            end
+            JAL: begin
+                o_reg_file_wr    = 1'b1;
+                o_imm_src        = J_TYPE;
+                o_alu_srcb_ctrl  = RF_RD2;
+                o_mem_write      = 1'b0;
+                o_cpu_result_src = PC_P4;
+                branch           = 1'b0;
+                o_alu_cntr       = ADD;
+                jump             = 1'b1;
+            end
+            default: begin
+                o_reg_file_wr    = 1'b0;
+                o_imm_src        = R_TYPE;
+                o_alu_srcb_ctrl  = RF_RD2;
+                o_mem_write      = 1'b0;
+                o_cpu_result_src = ALU;
+                branch           = 1'b0;
+                o_alu_cntr       = ADD;
+                jump             = 1'b0;
+            end
         endcase
     end
 
@@ -66,6 +132,6 @@ module cpu_ctrl #(
         endcase
     end
 
-    assign o_pc_src = branch & i_zero;
+    assign o_pc_src = (branch & i_zero) | (jump);
     
 endmodule

@@ -67,7 +67,7 @@ module risc_v#(
     logic [BUS_WIDTH-1:0]           read_data;
     logic                           mem_write;
 
-    logic                           cpu_result_src;
+    cpu_res_src_t                   cpu_result_src;
     //----------------------------//
     //  Intermediate Assignments  //
     //----------------------------//
@@ -202,6 +202,14 @@ module risc_v#(
         d_mem_addr  = alu_result;
 
         reg_file_wd3 = cpu_result_src ? read_data : alu_result;
+    end
+    always_comb begin
+        case (cpu_result_src)
+            ALU: cpu_result_src = alu_result;
+            DATA_MEM: cpu_result_src = read_data;
+            PC_P4: cpu_result_src = pc_plus_4;
+            default: cpu_result_src = 2'b0;
+        endcase
     end
 
     // Data Memory

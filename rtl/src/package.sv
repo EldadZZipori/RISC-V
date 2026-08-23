@@ -22,6 +22,9 @@ package pkg;
         SW      = 7'b0100011,
         BEQ     = 7'b1100011,
         R_TYPE  = 7'b1100011,
+        ADDI    = 7'b0010001,
+        I_TYPE  = 7'b0010011,
+        JAL     = 7'b1101111
     } instr_op_t;
 
     typedef enum logic[IMM_SRC_WIDTH-1:0] { 
@@ -36,5 +39,10 @@ package pkg;
         IMM_EXT = 1, RF_RD2 = 0 
     }   alu_src_b_ctrl_t;
 
+    typedef enum logic[1:0] {
+        ALU         = 2'b00,
+        DATA_MEM    = 2'b01,
+        PC_P4       = 2'b10
+    }   cpu_res_src_t;
 
 endpackage
