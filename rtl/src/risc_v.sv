@@ -58,7 +58,7 @@ module risc_v#(
     logic [BUS_WIDTH-1:0]           alu_src_b;
     logic                           alu_zero;
     logic [BUS_WIDTH-1:0]           alu_result;
-    logic [2:0]                     alu_op;
+    alu_cntr_t                      alu_cntr;
     alu_src_b_ctrl_t                alu_srcb_ctrl;
 
     // Data Memory
@@ -111,7 +111,7 @@ module risc_v#(
         .o_pc_src(pc_src)
         .o_cpu_result_src(cpu_result_src)
         .o_mem_write(mem_write),
-        .o_alu_op(alu_op),
+        .o_alu_cntr(alu_cntr),
         .o_alu_srcb_ctrl(alu_srcb_ctrl),
         .o_imm_src(imm_src),
         .o_rreg_file_wr(reg_file_wr)
@@ -191,7 +191,7 @@ module risc_v#(
     ) u_alu (
         .i_data_a(alu_src_a),
         .i_data_b(alu_src_b),
-        .i_operand(alu_op),
+        .i_operand(o_alu_cntr),
 
         .o_data(alu_result),
         .o_zero(alu_zero)
