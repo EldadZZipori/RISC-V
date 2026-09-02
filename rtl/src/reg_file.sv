@@ -2,7 +2,7 @@
 module reg_file # (
     parameter D_WIDTH = 32,
     parameter A_WIDTH = 5,
-    localparam N_REG = 32
+    parameter N_REG = 32
 )(
     input  logic                    clk,
     input  logic                    ares,

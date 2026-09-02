@@ -31,7 +31,7 @@ module alu #(
             // end
 
             SLT: begin
-                o_data = i_data_a < i_data_b ? {(D_WIDTH-1){1'b0},1'b1} : {D_WIDTH{1'b0}}
+                o_data = i_data_a < i_data_b ? {{(D_WIDTH-1){1'b0}}, 1'b1} : {D_WIDTH{1'b0}};
             end
 
             OR: begin
@@ -39,7 +39,7 @@ module alu #(
             end
 
             AND: begin
-                o_data = i_data_a & o_data_b;
+                o_data = i_data_a & i_data_b;
             end
 
             default: begin

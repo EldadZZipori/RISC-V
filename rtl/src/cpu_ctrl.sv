@@ -128,7 +128,9 @@ module cpu_ctrl #(
                     default: o_alu_cntr = AND;
                 endcase
             end
-            default:
+            default: begin
+                o_alu_cntr = AND;
+            end
         endcase
     end
 

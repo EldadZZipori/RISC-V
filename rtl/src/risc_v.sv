@@ -108,13 +108,13 @@ module risc_v#(
         .i_funct3(instr_funct3),
         .i_funct7_5(instr_funct7[5]),
         .i_zero(alu_zero),
-        .o_pc_src(pc_src)
-        .o_cpu_result_src(cpu_result_src)
+        .o_pc_src(pc_src),
+        .o_cpu_result_src(cpu_result_src),
         .o_mem_write(mem_write),
         .o_alu_cntr(alu_cntr),
         .o_alu_srcb_ctrl(alu_srcb_ctrl),
         .o_imm_src(imm_src),
-        .o_rreg_file_wr(reg_file_wr)
+        .o_reg_file_wr(reg_file_wr)
     );
     
     // Program Counter
