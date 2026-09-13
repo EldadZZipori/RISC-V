@@ -25,10 +25,7 @@ module risc_v#(
 
     // Program Counter
     logic [BUS_WIDTH-1:0]           pc;
-    logic [BUS_WIDTH-1:0]           next_pc;
-    logic [BUS_WIDTH-1:0]           pc_target;
-    logic [BUS_WIDTH-1:0]           pc_plus_4;
-    pc_src_t                        pc_src;
+    pc_mux_ctrl_t                   pc_mux_ctrl;
 
     // Instruction Memory
     logic [BUS_WIDTH-1:0]           instr;
@@ -40,26 +37,18 @@ module risc_v#(
     logic [REG_FILE_A_WIDTH-1:0]    rd1;
     logic [REG_FILE_A_WIDTH-1:0]    rd2;
     logic [BUS_WIDTH-1:0]           reg_file_wd3;
-    logic                           reg_file_wr;
-
-
-    // Instruction Decode
-    logic [6:0]                     instr_funct7;
-    logic [2:0]                     instr_funct3;
-    logic [19:0]                    instr_imm;
-    instr_op_t                      instr_op;
+    logic                           rf_wren;
 
     // Immediate Extend
     logic [BUS_WIDTH-1:0]           imm_ext;
-    instr_t                         imm_src;
+    instr_type_t                    imm_dec_ctrl;
 
     // ALU
-    logic [BUS_WIDTH-1:0]           alu_src_a;
-    logic [BUS_WIDTH-1:0]           alu_src_b;
-    logic                           alu_zero;
+    logic                           alu_taken_br;
     logic [BUS_WIDTH-1:0]           alu_result;
-    alu_cntr_t                      alu_cntr;
-    alu_src_b_ctrl_t                alu_srcb_ctrl;
+    alu_op_t                        alu_op;
+    alu_mux_ctrl_t                  alu_mux_a_ctrl;
+    alu_mux_ctrl_t                  alu_mux_b_ctrl;
 
     // Data Memory
     logic [BUS_WIDTH-1:0]           write_data;
@@ -67,7 +56,8 @@ module risc_v#(
     logic [BUS_WIDTH-1:0]           read_data;
     logic                           mem_write;
 
-    cpu_res_src_t                   cpu_result_src;
+    rf_mux_ctrl_t                   rf_mux_ctrl;
+    
     //----------------------------//
     //  Intermediate Assignments  //
     //----------------------------//
@@ -77,24 +67,6 @@ module risc_v#(
         instr_rs2   = instr[24:20];
         instr_rs1   = instr[19:15];
         instr_rd    = instr[11:7];
-
-        // Instruction Decode
-        instr_funct7      = instr[31:25];
-        instr_funct3      = instr[14:12];
-        instr_op          = instr_op_t'(instr[6:0]);
-
-        // Program Counter
-        pc_target   = pc + imm_ext;
-        pc_plus_4   = pc + 4;
-
-    end
-
-    // pc source
-    always_comb begin 
-        case (pc_src)
-            IMM_EXT: next_pc = pc_target;
-            default: next_pc = pc_plus_4;
-        endcase
     end
 
 
@@ -104,17 +76,17 @@ module risc_v#(
 
     // Control Unit
     cpu_ctrl u_cpu_ctrl (
-        .i_op(instr_op),
-        .i_funct3(instr_funct3),
-        .i_funct7_5(instr_funct7[5]),
-        .i_zero(alu_zero),
-        .o_pc_src(pc_src),
-        .o_cpu_result_src(cpu_result_src),
-        .o_mem_write(mem_write),
-        .o_alu_cntr(alu_cntr),
-        .o_alu_srcb_ctrl(alu_srcb_ctrl),
-        .o_imm_src(imm_src),
-        .o_reg_file_wr(reg_file_wr)
+        .i_instr(instr),
+        .i_taken_br(alu_taken_br),
+
+        .o_pc_mux_ctrl(pc_mux_ctrl),
+        .o_imm_dec_ctrl(imm_dec_ctrl),
+        .o_rf_wren(rf_wren),
+        .o_alu_op(alu_op),
+        .o_alu_mux_a_ctrl(alu_mux_a_ctrl),
+        .o_alu_mux_b_ctrl(alu_mux_b_ctrl),
+        .o_rf_mux_ctrl(rf_mux_ctrl),
+        .o_dmem_wren(mem_write)
     );
     
     // Program Counter
@@ -125,8 +97,12 @@ module risc_v#(
         .ares(ares),
         .sres(sres),
 
-        .i_next_pc(next_pc),
+        .i_src1(rd1),
+        .i_imm(imm_ext),
+
         .i_en(1'b1),        // Always Enabled for single cycle processor
+        .i_pc_mux_ctrl(pc_mux_ctrl),
+
         .o_pc(pc)
     );
 
@@ -161,7 +137,7 @@ module risc_v#(
         // Write Port
         .i_data_rd(instr_rd),
         .i_addr_rd(reg_file_wd3),
-        .i_wr_en_rd(reg_file_wr)
+        .i_wr_en_rd(rf_wren)
     );
 
     // Sign Extend
@@ -169,47 +145,32 @@ module risc_v#(
         .BUS_WIDTH(BUS_WIDTH)
     ) u_sign_ext (
         .i_instr(instr),
-        .i_imm_src(imm_src),
+        .i_imm_dec_ctrl(imm_dec_ctrl),
 
         .o_imm_ext(imm_ext)
     );
 
-    always_comb begin
-        alu_src_a   = rd1;
-    end
-
-    always_comb begin
-        case (alu_srcb_ctrl)
-            IMM_EXT: alu_src_b = imm_ext;
-            default: alu_src_b = rd2;
-        endcase
-    end
-
-    // Arithmetic Logic Unit
-    alu #(
+    alu_wrap #(
         .D_WIDTH(BUS_WIDTH)
-    ) u_alu (
-        .i_data_a(alu_src_a),
-        .i_data_b(alu_src_b),
-        .i_operand(o_alu_cntr),
+    ) u_alu_wrap (
+        i_alu_op(alu_op),
+        i_alu_mux_a_ctrl(alu_mux_a_ctrl),
+        i_alu_mux_b_ctrl(alu_mux_b_ctrl),
 
-        .o_data(alu_result),
-        .o_zero(alu_zero)
+        i_src1(rd1),
+        i_src2(rd2),
+        i_pc(pc),
+        i_imm(imm_ext),
+
+        o_taken_br(alu_taken_br),
+        o_alu_result(alu_result)
     );
 
     always_comb begin
         write_data  = rd2;
         d_mem_addr  = alu_result;
 
-        reg_file_wd3 = cpu_result_src ? read_data : alu_result;
-    end
-    always_comb begin
-        case (cpu_result_src)
-            ALU: cpu_result_src = alu_result;
-            DATA_MEM: cpu_result_src = read_data;
-            PC_P4: cpu_result_src = pc_plus_4;
-            default: cpu_result_src = 2'b0;
-        endcase
+        reg_file_wd3 = rf_mux_ctrl ? read_data : alu_result;
     end
 
     // Data Memory

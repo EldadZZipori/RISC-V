@@ -5,13 +5,13 @@ module sign_ext #(
     parameter BUS_WIDTH = 32
 ) (
     input logic     [BUS_WIDTH-1:0] i_instr,
-    input instr_t                   i_imm_src,
+    input instr_type_t                   i_imm_dec_ctrl,
 
     output logic    [BUS_WIDTH-1:0] o_imm_ext
 );
 
     always_comb begin
-        case (i_imm_src)
+        case (i_imm_dec_ctrl)
             I_TYPE: begin
                 o_imm_ext = {{20{i_instr[31]}}, i_instr[31:20]};
             end
