@@ -34,8 +34,8 @@ module risc_v#(
     logic [REG_FILE_A_WIDTH-1:0]    instr_rs1;
     logic [REG_FILE_A_WIDTH-1:0]    instr_rs2;
     logic [REG_FILE_A_WIDTH-1:0]    instr_rd;
-    logic [REG_FILE_A_WIDTH-1:0]    rd1;
-    logic [REG_FILE_A_WIDTH-1:0]    rd2;
+    logic [BUS_WIDTH-1:0]           rd1;
+    logic [BUS_WIDTH-1:0]           rd2;
     logic [BUS_WIDTH-1:0]           reg_file_wd3;
     logic                           rf_wren;
 
@@ -47,8 +47,8 @@ module risc_v#(
     logic                           alu_taken_br;
     logic [BUS_WIDTH-1:0]           alu_result;
     alu_op_t                        alu_op;
-    alu_mux_ctrl_t                  alu_mux_a_ctrl;
-    alu_mux_ctrl_t                  alu_mux_b_ctrl;
+    alu_HEHE_ctrl_t                 alu_mux_a_ctrl;
+    alu_HAHA_ctrl_t                 alu_mux_b_ctrl;
 
     // Data Memory
     logic [BUS_WIDTH-1:0]           write_data;
@@ -113,7 +113,7 @@ module risc_v#(
     ) u_instr_mem (
         .clk(clk),
 
-        .i_addr(pc),
+        .i_addr(pc[I_MEM_ADDR_WIDTH-1:0]),
         .o_data(instr)
     );
 
@@ -135,8 +135,8 @@ module risc_v#(
         .o_data_rs2(rd2),
 
         // Write Port
-        .i_data_rd(instr_rd),
-        .i_addr_rd(reg_file_wd3),
+        .i_data_rd(reg_file_wd3),
+        .i_addr_rd(instr_rd),
         .i_wr_en_rd(rf_wren)
     );
 
@@ -144,7 +144,7 @@ module risc_v#(
     sign_ext #(
         .BUS_WIDTH(BUS_WIDTH)
     ) u_sign_ext (
-        .i_instr(instr),
+        .i_instr(instr[BUS_WIDTH-1:7]), // Lower 7b are op codes
         .i_imm_dec_ctrl(imm_dec_ctrl),
 
         .o_imm_ext(imm_ext)
@@ -153,17 +153,18 @@ module risc_v#(
     alu_wrap #(
         .D_WIDTH(BUS_WIDTH)
     ) u_alu_wrap (
-        i_alu_op(alu_op),
-        i_alu_mux_a_ctrl(alu_mux_a_ctrl),
-        i_alu_mux_b_ctrl(alu_mux_b_ctrl),
+        
+        .i_alu_op(alu_op),
+        .i_alu_mux_a_ctrl(alu_mux_a_ctrl),
+        .i_alu_mux_b_ctrl(alu_mux_b_ctrl),
 
-        i_src1(rd1),
-        i_src2(rd2),
-        i_pc(pc),
-        i_imm(imm_ext),
+        .i_src1(rd1),
+        .i_src2(rd2),
+        .i_pc(pc),
+        .i_imm(imm_ext),
 
-        o_taken_br(alu_taken_br),
-        o_alu_result(alu_result)
+        .o_taken_br(alu_taken_br),
+        .o_alu_result(alu_result)
     );
 
     always_comb begin
@@ -181,7 +182,7 @@ module risc_v#(
         .clk(clk),
 
         .i_data(write_data),
-        .i_addr(d_mem_addr),
+        .i_addr(d_mem_addr[D_MEM_ADDR_WIDTH-1:0]),
         .i_wr_en(mem_write),    
         .o_data(read_data)
     );

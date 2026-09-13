@@ -7,7 +7,7 @@ BUILD_DIR = .verilator_tmp
 
 # Ordering: package before RTL
 PKG = rtl/src/pkg.sv
-RTL = $(PKG) $(wildcard rtl/src/*.sv)
+RTL = $(PKG) $(filter-out $(PKG),$(wildcard rtl/src/*.sv))
 
 # ==================================================
 # Targets

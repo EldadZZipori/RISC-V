@@ -12,7 +12,7 @@ module alu #(
     output logic                    o_taken_br
 );
 
-    logic [63:0] data_a_ext; // sign extended version of i_data_a
+    logic [2*D_WIDTH-1:0] data_a_ext; // sign extended version of i_data_a
     assign data_a_ext = {{32{i_data_a[31]}}, i_data_a};
     logic same_sign;
     assign same_sign = i_data_a[31] == i_data_b[31];
@@ -20,6 +20,8 @@ module alu #(
     assign a_less_than_b = i_data_a < i_data_b;
 
     always_comb begin
+        o_data = 32'b0;  
+        o_taken_br = 1'b0; 
         case (i_operand)
             // Arithmetic operations
             ALU_ADD:
@@ -39,7 +41,7 @@ module alu #(
             ALU_SRL:    // shift right logic
                 o_data = i_data_a >> i_data_b[4:0];
             ALU_SRA:    // shift right arithmetic
-                o_data = data_a_ext >> i_data_b[4:0];
+                o_data = 32'({data_a_ext >> i_data_b[4:0]});
 
             // Set operations
             ALU_SLT:    // set if less than
@@ -53,19 +55,25 @@ module alu #(
 
             // Branch operations
             ALU_BEQ:    // branch if equal
-                o_data = i_data_a == i_data_b;
+                o_taken_br = i_data_a == i_data_b;
             ALU_BNE:    // branch if NOT equal
-                o_data = i_data_a != i_data_b;
-            ALU_BLT,    // branch if less than
-                o_data = (a_less_than_b) ^ (!same_sign);    // (i_data_a <  i_data_b) ^ (i_data_a[31] != i_data_b[31])
+                o_taken_br = i_data_a != i_data_b;
+            ALU_BLT:    // branch if less than
+                o_taken_br = (a_less_than_b) ^ (!same_sign);    // (i_data_a <  i_data_b) ^ (i_data_a[31] != i_data_b[31])
             ALU_BGE:    // branch if greater than or equal
-                o_data = (!a_less_than_b) ^ (!same_sign);   // (i_data_a >= i_data_b) ^ (i_data_a[31] != i_data_b[31])
+                o_taken_br = (!a_less_than_b) ^ (!same_sign);   // (i_data_a >= i_data_b) ^ (i_data_a[31] != i_data_b[31])
             ALU_BLTU:   // branch if less than unsigned
-                o_data = a_less_than_b;                     // i_data_a < i_data_b
+                o_taken_br = a_less_than_b;                     // i_data_a < i_data_b
             ALU_BGEU:   // branch if greather than or equal unsigned
-                o_data = a_less_than_b;                     // i_data_a >= i_data_b
-            ALU_NULL, default:
+                o_taken_br = a_less_than_b;                     // i_data_a >= i_data_b
+            ALU_NULL: begin
+                o_data = 32'b0;  
+                o_taken_br = 1'b0;   
+            end       
+            default: begin
                 o_data = 32'b0;
+                o_taken_br = 1'b0;
+            end
         endcase
     end
     

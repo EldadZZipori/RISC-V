@@ -4,10 +4,6 @@ import pkg::*;
 module alu_wrap #(
     parameter D_WIDTH = 32
 ) (
-    input  logic            clk,
-    input  logic            ares,
-    input  logic            sres,
-
     input  alu_op_t         i_alu_op,
     input  alu_HEHE_ctrl_t  i_alu_mux_a_ctrl,
     input  alu_HAHA_ctrl_t  i_alu_mux_b_ctrl,
@@ -23,14 +19,14 @@ module alu_wrap #(
     logic [31:0] selected_data_a; // output of alu_mux_a
     logic [31:0] selected_data_b; // output of alu_mux_b
 
-    always_comb begin : alu_mux_a
-        case (i_alu_mux_a_ctrl) : alu_mux_a
+    always_comb begin : alu_muxes
+        case (i_alu_mux_a_ctrl)
             ALU_CTRL_SRC1:  selected_data_a = i_src1;
             ALU_CTRL_PC:    selected_data_a = i_pc;
             default:        selected_data_a = i_src1;
         endcase
 
-        case (i_alu_mux_b_ctrl) : alu_mux_b
+        case (i_alu_mux_b_ctrl)
             ALU_CTRL_SRC2:  selected_data_b = i_src2;
             ALU_CTRL_IMM:   selected_data_b = i_imm;
             ALU_CTRL_4:     selected_data_b = 32'h4;
@@ -41,15 +37,11 @@ module alu_wrap #(
     alu #(
         .D_WIDTH(D_WIDTH)
     ) u_alu (
-        .clk(clk),
-        .ares(ares),
-        .sres(sres),
-        
-        i_data_a(selected_data_a),
-        i_data_b(selected_data_b),
-        i_operand(i_alu_op),
+        .i_data_a(selected_data_a),
+        .i_data_b(selected_data_b),
+        .i_operand(i_alu_op),
 
-        o_data(o_alu_result),
-        o_taken_br(o_taken_br)
+        .o_data(o_alu_result),
+        .o_taken_br(o_taken_br)
     );
 endmodule

@@ -10,7 +10,7 @@ module pc # (
     input  logic [BUS_WIDTH-1:0]    i_imm,
 
     input  logic                    i_en,
-    input  logic                    i_pc_mux_ctrl,
+    input  pc_mux_ctrl_t            i_pc_mux_ctrl,
 
     output logic [BUS_WIDTH-1:0]    o_pc
 );
@@ -18,19 +18,19 @@ module pc # (
     logic [BUS_WIDTH-1:0]   pc;
 
     // PC mux wires
-    logic [BUS_WIDTH-1:0]   jalr_tgt_pc_inter;
-    logic [BUS_WIDTH-1:0]   jalr_tgt_pc;
-    logic [BUS_WIDTH-1:0]   br_tgt_pc;
+    logic [BUS_WIDTH-1:0]   jalr_tgt_pc_inter;  // Ignore LSB for jumps (each instruction at least 2 byte aligned)
+    logic [BUS_WIDTH-1:0]   jalr_tgt_pc;        // Jump and Link Register Target
+    logic [BUS_WIDTH-1:0]   br_tgt_pc;          // Branch Target
     logic [BUS_WIDTH-1:0]   i_next_pc;
 
     // Intermediate wires
-    assign jalr_tgt_pc_inter = src1 + imm;
-    assign jalr_tgt_pc  = {jalr_tgt_pc_inter[31:1], 1'b0};
-    assign br_tgt_pc    = pc + imm;
+    assign jalr_tgt_pc_inter = i_src1 + i_imm;
+    assign jalr_tgt_pc  = {jalr_tgt_pc_inter[31:1], 1'b0}; 
+    assign br_tgt_pc    = pc + i_imm;
 
     // PC mux logic
     always_comb begin : pc_mux
-        case (i_pc_mux_ctrl) : pc_mux
+        case (i_pc_mux_ctrl)
             PC_MUX_4: begin
                 i_next_pc = pc + 4;
             end

@@ -4,8 +4,8 @@ import pkg::*;
 module sign_ext #(
     parameter BUS_WIDTH = 32
 ) (
-    input logic     [BUS_WIDTH-1:0] i_instr,
-    input instr_type_t                   i_imm_dec_ctrl,
+    input logic     [BUS_WIDTH-1:7] i_instr,
+    input instr_type_t              i_imm_dec_ctrl,
 
     output logic    [BUS_WIDTH-1:0] o_imm_ext
 );
@@ -29,7 +29,7 @@ module sign_ext #(
             end
 
             J_TYPE: begin
-                o_imm_ext = {{11{i_instr[31]}}, i_instr[19:12], i_instr[20], i_instr[30:21], 1'b0};
+                o_imm_ext = {{12{i_instr[31]}}, i_instr[19:12], i_instr[20], i_instr[30:21], 1'b0};
             end
 
             R_TYPE: begin
